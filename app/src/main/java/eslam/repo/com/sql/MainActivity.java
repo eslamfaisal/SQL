@@ -1,6 +1,7 @@
 package eslam.repo.com.sql;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -20,8 +21,12 @@ public class MainActivity extends AppCompatActivity {
 
     ThingsDbHelper dbHelper;
     SQLiteDatabase sqLiteDatabase;
-    public static String USER_NAME = "user_data_name";
-    public static int USER_ID = 0;
+
+    public static final String USER_NAME_INTENT = "USER_NAME";
+    public static final String USER_ID_INTENT = "USER_ID";
+
+    public static String USER_NAME;
+    public static int USER_ID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +48,8 @@ public class MainActivity extends AppCompatActivity {
         String uName = name.getText().toString().trim();
         String uPass = pass.getText().toString().trim();
 
-        if (uName.length() <= 0 || uPass.length() <= 0) {
-            return;
-        } else {
-            userData(uName);
+        if (!(uName.length() <= 0 || uPass.length() <= 0)) {
+            userData(uName, uPass);
         }
     }
 
@@ -56,29 +59,36 @@ public class MainActivity extends AppCompatActivity {
         String uName = name1.getText().toString().trim();
         String uPass = pass1.getText().toString().trim();
 
-        int exist = checkUserName(uName).getCount();
-        if (exist != 0) {
-            Toast.makeText(this, "this name is exists", Toast.LENGTH_SHORT).show();
-        } else {
-            insertUser(uName, uPass);
+        if (!(uName.length() <= 0 || uPass.length() <= 0)) {
+            int exist = checkUserName(uName).getCount();
+            if (exist != 0) {
+                Toast.makeText(this, "الاسم دا موجود اديني واحد غيرة", Toast.LENGTH_SHORT).show();
+            } else {
+                insertUser(uName, uPass);
+            }
+        }else {
+            Toast.makeText(this, "دخل الاسم والباسورد يعم", Toast.LENGTH_SHORT).show();
         }
-
     }
 
-    public void userData(String name) {
-        Cursor cursor = checkUserName(name);
+    public void userData(String name, String pass) {
+        Cursor cursor = checkUserNameAndPass(name, pass);
         if (cursor.getCount() == 0) {
-            Toast.makeText(this, "this name is not exists", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "اتاكد من الاسم والباسورد يعم ", Toast.LENGTH_SHORT).show();
         } else {
             if (cursor.moveToNext()) {
                 int userId = cursor.getInt(cursor.getColumnIndex(ThingsContract.usersEntry.COLUMN_USER_ID));
                 String userName = cursor.getString(cursor.getColumnIndex(ThingsContract.usersEntry.COLUMN_USER_NAME));
                 USER_ID = userId;
                 USER_NAME = userName;
+                Intent intent = new Intent(this, PostsActivity.class);
+                intent.putExtra(USER_NAME_INTENT, USER_NAME);
+                intent.putExtra(USER_ID_INTENT, USER_ID);
+                startActivity(intent);
+                finish();
             }
         }
     }
-
 
     public void insertUser(String name, String pass) {
         ContentValues values = new ContentValues();
@@ -98,17 +108,26 @@ public class MainActivity extends AppCompatActivity {
         String selection = ThingsContract.usersEntry.COLUMN_USER_NAME + " = ?";
         String[] selectionArgs = {name};
 
-        Cursor cursor = sqLiteDatabase.query(
-                ThingsContract.usersEntry.TABLE_NAME,   // The table to query
-                null,             // The array of columns to return (pass null to get all)
-                selection,              // The columns for the WHERE clause
-                selectionArgs,          // The values for the WHERE clause
-                null,                   // don't group the rows
-                null,                   // don't filter by row groups
-                null                    // The sort order
-        );
+        Cursor cursor = getContentResolver().query(ThingsContract.usersEntry.USERS_CONTENT_URI,
+                null,
+                selection,
+                selectionArgs,
+                null);
         return cursor;
     }
 
+    public Cursor checkUserNameAndPass(String name, String pass) {
+        sqLiteDatabase = dbHelper.getReadableDatabase();
 
+        String selection = ThingsContract.usersEntry.COLUMN_USER_NAME + " = ? AND " +
+                ThingsContract.usersEntry.COLUMN_USER_PASS + " = ?";
+        String[] selectionArgs = {name, pass};
+
+        Cursor cursor = getContentResolver().query(ThingsContract.usersEntry.USERS_CONTENT_URI,
+                null,
+                selection,
+                selectionArgs,
+                null);
+        return cursor;
+    }
 }

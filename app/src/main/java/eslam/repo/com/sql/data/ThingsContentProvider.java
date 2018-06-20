@@ -5,7 +5,6 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -19,7 +18,7 @@ public class ThingsContentProvider extends ContentProvider {
     public static final int POST = 1;
     public static final int POST_ID = 2;
     public static final int USERS = 4;
-    public static final int USRES_ID = 3;
+    public static final int USERS_ID = 3;
 
     public UriMatcher matcher = matcher();
 
@@ -29,7 +28,7 @@ public class ThingsContentProvider extends ContentProvider {
         uriMatcher.addURI(ThingsContract.AUTHORITY, ThingsContract.postEntry.PATH_POSTS, POST);
         uriMatcher.addURI(ThingsContract.AUTHORITY, ThingsContract.postEntry.PATH_POSTS + "/#", POST_ID);
         uriMatcher.addURI(ThingsContract.AUTHORITY, ThingsContract.usersEntry.PATH_USERS, USERS);
-        uriMatcher.addURI(ThingsContract.AUTHORITY, ThingsContract.usersEntry.PATH_USERS + "/#", USRES_ID);
+        uriMatcher.addURI(ThingsContract.AUTHORITY, ThingsContract.usersEntry.PATH_USERS + "/#", USERS_ID);
 
         return uriMatcher;
     }
@@ -45,7 +44,37 @@ public class ThingsContentProvider extends ContentProvider {
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
                         @Nullable String[] selectionArgs, @Nullable String sortOrder) {
 
-        return null;
+        SQLiteDatabase database = dbHelper.getReadableDatabase();
+        Cursor cursor;
+
+        int match = matcher.match(uri);
+        switch (match) {
+
+            case USERS:
+                cursor = database.query(usersEntry.TABLE_NAME, projection, selection,
+                        selectionArgs, null, null, sortOrder);
+                break;
+            case POST:
+                cursor = database.query(postEntry.TABLE_NAME, projection, selection,
+                        selectionArgs, null, null, sortOrder);
+                break;
+            case USERS_ID:
+                selection = usersEntry.COLUMN_USER_ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                cursor = database.query(usersEntry.TABLE_NAME, projection, selection,
+                        selectionArgs, null, null, sortOrder);
+                break;
+            case POST_ID:
+                selection = postEntry.COLUMN_USER_ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                cursor = database.query(postEntry.TABLE_NAME, projection, selection,
+                        selectionArgs, null, null, sortOrder);
+                break;
+            default:
+                throw new UnsupportedOperationException("unknown uri :" + uri);
+        }
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
     }
 
     @Nullable
@@ -67,7 +96,7 @@ public class ThingsContentProvider extends ContentProvider {
             case POST:
                 id = database.insert(postEntry.TABLE_NAME, null, values);
                 if (id > 0) {
-                    returnUri = ContentUris.withAppendedId(postEntry.USERS_CONTENT_URI, id);
+                    returnUri = ContentUris.withAppendedId(postEntry.POST_CONTENT_URI, id);
                 } else {
                     throw new android.database.SQLException("fail to insert" + uri);
                 }

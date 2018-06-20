@@ -28,6 +28,7 @@ public class ThingsDbHelper extends SQLiteOpenHelper {
                 postEntry.TABLE_NAME + "(" +
                 postEntry.COLUMN_POST_ID + " INTEGER PRIMARY KEY AUTOINCREMENT , " +
                 postEntry.COLUMN_USER_ID + " INTEGER NOT NULL ," +
+                postEntry.COLUMN_USER_NAME + " TEXT NOT NULL ," +
                 postEntry.COLUMN_POST_TEXT + " TEXT NOT NULL " +
                 ");";
 

@@ -1,6 +1,7 @@
 package eslam.repo.com.sql;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -8,19 +9,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import eslam.repo.com.sql.data.ThingsContract;
+
 public class ThingsAdapter extends RecyclerView.Adapter<ThingsAdapter.ThingsViewHolder> {
 
     int index = 100;
-    int mColor;
     Context mContext;
+    Cursor mCursor;
 
-    public ThingsAdapter(Context context) {
+    public ThingsAdapter(Context context ) {
         mContext = context;
+
     }
 
-    public interface OnListItemClickListener {
-        void onPositionClicked(int position);
-    }
 
     @NonNull
     @Override
@@ -35,13 +36,17 @@ public class ThingsAdapter extends RecyclerView.Adapter<ThingsAdapter.ThingsView
     @Override
     public void onBindViewHolder(@NonNull ThingsViewHolder holder, int position) {
 
-        holder.bind(position,"eslam");
-
+        if (mCursor.moveToNext()) {
+            String postText = mCursor.getString(mCursor.getColumnIndex(ThingsContract.postEntry.COLUMN_POST_TEXT));
+            String userName = mCursor.getString(mCursor.getColumnIndex(ThingsContract.postEntry.COLUMN_USER_NAME));
+            holder.bind(userName,postText);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return index;
+        if (null == mCursor) return 0;
+        return mCursor.getCount();
     }
 
     public class ThingsViewHolder extends RecyclerView.ViewHolder {
@@ -56,10 +61,14 @@ public class ThingsAdapter extends RecyclerView.Adapter<ThingsAdapter.ThingsView
             mPostText = itemView.findViewById(R.id.post_text);
         }
 
-        void bind(int index, String eslam) {
-            mIndex.setText("" + index);
-            mPostText.setText(eslam);
+        void bind(String userName, String postText) {
+            mIndex.setText(userName);
+            mPostText.setText(postText);
         }
+    }
 
+    void swapCursor(Cursor newCursor) {
+        mCursor = newCursor;
+        notifyDataSetChanged();
     }
 }
