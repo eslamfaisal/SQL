@@ -118,7 +118,43 @@ public class ThingsContentProvider extends ContentProvider {
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+
+        final SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        int match = matcher.match(uri);
+
+        int postOrUserDeleted;
+        String id;
+        switch (match) {
+
+            case POST_ID:
+
+                postOrUserDeleted = db.delete(postEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case POST:
+
+                postOrUserDeleted = db.delete(postEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+
+            case USERS:
+                postOrUserDeleted = db.delete(usersEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case USERS_ID:
+
+                id = uri.getPathSegments().get(1);
+
+                postOrUserDeleted = db.delete(usersEntry.TABLE_NAME, "_id=?", new String[]{id});
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+
+        if (postOrUserDeleted != 0) {
+
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return postOrUserDeleted;
     }
 
     @Override

@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
         Uri lon = getContentResolver().insert(ThingsContract.usersEntry.USERS_CONTENT_URI, values);
         if (lon != null) {
-            Toast.makeText(this, "post = " + lon.toString(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "اتضاف ", Toast.LENGTH_SHORT).show();
 
         }
     }

@@ -3,6 +3,7 @@ package eslam.repo.com.sql;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -12,15 +13,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import eslam.repo.com.sql.data.ThingsContract;
 import eslam.repo.com.sql.data.ThingsContract.*;
 
 public class PostsActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
+    private static final int TASK_LOADER_ID = 1;
     int userID;
     RecyclerView mRecyclerView;
     ThingsAdapter adapter;
@@ -50,10 +57,32 @@ public class PostsActivity extends AppCompatActivity implements LoaderManager.Lo
 
         LinearLayoutManager manager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(manager);
-        getSupportLoaderManager().initLoader(1, null, this);
+        getSupportLoaderManager().initLoader(TASK_LOADER_ID, null, this);
         adapter = new ThingsAdapter(this);
-
         mRecyclerView.setAdapter(adapter);
+
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+
+                int id = (int) viewHolder.itemView.getTag();
+
+                String stringId = Integer.toString(id);
+                Uri uri = postEntry.POST_CONTENT_URI;
+                uri = uri.buildUpon().appendPath(stringId).build();
+
+                getContentResolver().delete(uri, null, null);
+
+                getSupportLoaderManager().restartLoader(TASK_LOADER_ID, null, PostsActivity.this);
+
+            }
+        }).attachToRecyclerView(mRecyclerView);
 
     }
 
@@ -74,6 +103,8 @@ public class PostsActivity extends AppCompatActivity implements LoaderManager.Lo
         }else if (id == R.id.log_out){
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
+        }else if (id == R.id.delete_user){
+            deleteCurrentUser();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -115,6 +146,17 @@ public class PostsActivity extends AppCompatActivity implements LoaderManager.Lo
             values.put(postEntry.COLUMN_USER_ID, MainActivity.USER_ID);
             getContentResolver().insert(postEntry.POST_CONTENT_URI, values);
         }
+    }
+
+    void deleteCurrentUser(){
+        Uri uri = usersEntry.USERS_CONTENT_URI;
+        uri = uri.buildUpon().appendPath(String.valueOf(MainActivity.USER_ID)).build();
+        getContentResolver().delete(uri, null, null);
+
+        getContentResolver().delete(postEntry.POST_CONTENT_URI,postEntry.COLUMN_USER_ID+"=?",
+                new String[]{String.valueOf(MainActivity.USER_ID)});
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
     }
 
 }

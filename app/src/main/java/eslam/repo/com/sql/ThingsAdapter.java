@@ -17,7 +17,7 @@ public class ThingsAdapter extends RecyclerView.Adapter<ThingsAdapter.ThingsView
     Context mContext;
     Cursor mCursor;
 
-    public ThingsAdapter(Context context ) {
+    public ThingsAdapter(Context context) {
         mContext = context;
 
     }
@@ -39,7 +39,9 @@ public class ThingsAdapter extends RecyclerView.Adapter<ThingsAdapter.ThingsView
         if (mCursor.moveToNext()) {
             String postText = mCursor.getString(mCursor.getColumnIndex(ThingsContract.postEntry.COLUMN_POST_TEXT));
             String userName = mCursor.getString(mCursor.getColumnIndex(ThingsContract.postEntry.COLUMN_USER_NAME));
-            holder.bind(userName,postText);
+            int id = mCursor.getInt(mCursor.getColumnIndex(ThingsContract.postEntry.COLUMN_POST_ID));
+            holder.itemView.setTag(id);
+            holder.bind(userName, postText);
         }
     }
 
